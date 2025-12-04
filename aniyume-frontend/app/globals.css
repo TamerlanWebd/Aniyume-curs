@@ -1,0 +1,97 @@
+@import "tailwindcss";
+@import "slick-carousel/slick/slick.css";
+@import "slick-carousel/slick/slick-theme.css";
+
+:root {
+  --background: #ffffffe8;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededede3;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  /* Improved font stack for better readability and "premium" feel */
+  font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  /* Background image settings */
+  /* Note: Ensure the background color matches the theme variable if image fails to load */
+  background-color: var(--background);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+.anime-card-item {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+}
+
+.anime-card-item:hover {
+  transform: scale(1.05) translateY(5px);
+  box-shadow: 0 20px 25px -5px rgba(0, 201, 176, 0.5),
+    0 8px 10px -6px rgba(0, 201, 176, 0.5);
+}
+
+.anime-card-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 119, 95, 0.12);
+  transition: background-color 0.3s ease-in-out;
+  display: flex;
+  align-items: flex-end;
+  padding: 0.75rem;
+}
+
+.anime-card-item:hover .anime-card-overlay {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.anime-card-title {
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.anime-card-item:hover .anime-card-title {
+  opacity: 1;
+}
+
+::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.15s ease-out;
+}

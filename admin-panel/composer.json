@@ -1,0 +1,9 @@
+{
+    "require-dev": {
+        "nunomaduro/larastan": "*"
+    },
+    "require": {
+        "laravel/telescope": "^5.15",
+        "pusher/pusher-php-server": "^7.2"
+    }
+}
