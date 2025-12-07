@@ -1,19 +1,21 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import Navbar from '@/components/Navbar';
-import AnimeBanner from '@/components/AnimeBanner';
-import AnimePoster from '@/components/AnimePoster';
-import AnimeInfo from '@/components/AnimeInfo';
-import AnimePlayer from '@/components/AnimePlayer';
-import EpisodeSelector from '@/components/EpisodeSelector';
-import ReviewList from '@/components/ReviewList';
-import RatingWidget from '@/components/RatingWidget';
-import { animeService } from '@/lib/services/animeService';
-import { userAnimeService } from '@/lib/services/userAnimeService';
-import { useAuth } from '@/context/AuthContext';
-import { Heart, Plus, Check } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
+import Navbar from "@/components/Navbar";
+import AnimeBanner from "@/components/AnimeBanner";
+import AnimePoster from "@/components/AnimePoster";
+import AnimeInfo from "@/components/AnimeInfo";
+import AnimePlayer from "@/components/AnimePlayer";
+import EpisodeSelector from "@/components/EpisodeSelector";
+import StreamingSection from "@/components/anime/StreamingSection";
+
+import ReviewList from "@/components/ReviewList";
+import RatingWidget from "@/components/RatingWidget";
+import { animeService } from "@/lib/services/animeService";
+import { userAnimeService } from "@/lib/services/userAnimeService";
+import { useAuth } from "@/context/AuthContext";
+import { Heart, Plus, Check } from "lucide-react";
 
 export default function AnimeDetail() {
   const { id } = useParams();
@@ -42,7 +44,6 @@ export default function AnimeDetail() {
           // const favs = await userAnimeService.getFavorites();
           // setInFavorites(favs.some((f: any) => f.id === Number(id)));
         }
-
       } catch (error) {
         console.error("Failed to fetch anime details", error);
       } finally {
@@ -78,10 +79,22 @@ export default function AnimeDetail() {
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">Loading...</div>;
-  if (!anime) return <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">Anime not found</div>;
+  if (loading)
+    return (
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        Loading...
+      </div>
+    );
+  if (!anime)
+    return (
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        Anime not found
+      </div>
+    );
 
-  const currentEpisodeData = anime.episodes_data?.find((ep: any) => ep.number === currentEpisode);
+  const currentEpisodeData = anime.episodes_data?.find(
+    (ep: any) => ep.number === currentEpisode
+  );
   const playerUrl = currentEpisodeData?.url || anime.player_url;
 
   return (
@@ -97,23 +110,53 @@ export default function AnimeDetail() {
             <div className="flex flex-col gap-2">
               <button
                 onClick={toggleFavorite}
-                className={`w-full py-2 rounded font-bold flex items-center justify-center gap-2 transition-colors ${inFavorites ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-700 hover:bg-gray-600'}`}
+                className={`w-full py-2 rounded font-bold flex items-center justify-center gap-2 transition-colors ${
+                  inFavorites
+                    ? "bg-red-600 hover:bg-red-700"
+                    : "bg-gray-700 hover:bg-gray-600"
+                }`}
               >
-                <Heart className={`w-5 h-5 ${inFavorites ? 'fill-current' : ''}`} />
-                {inFavorites ? 'В избранном' : 'В избранное'}
+                <Heart
+                  className={`w-5 h-5 ${inFavorites ? "fill-current" : ""}`}
+                />
+                {inFavorites ? "В избранном" : "В избранное"}
               </button>
 
               <div className="relative group">
                 <button className="w-full py-2 bg-purple-600 hover:bg-purple-700 rounded font-bold flex items-center justify-center gap-2">
-                  {watchlistStatus ? <Check className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
-                  {watchlistStatus ? 'В списке' : 'Добавить в список'}
+                  {watchlistStatus ? (
+                    <Check className="w-5 h-5" />
+                  ) : (
+                    <Plus className="w-5 h-5" />
+                  )}
+                  {watchlistStatus ? "В списке" : "Добавить в список"}
                 </button>
                 {/* Dropdown for watchlist status */}
                 <div className="absolute top-full left-0 w-full bg-gray-800 rounded shadow-xl hidden group-hover:block z-20">
-                  <button onClick={() => addToWatchlist('watching')} className="block w-full text-left px-4 py-2 hover:bg-gray-700">Смотрю</button>
-                  <button onClick={() => addToWatchlist('completed')} className="block w-full text-left px-4 py-2 hover:bg-gray-700">Просмотрено</button>
-                  <button onClick={() => addToWatchlist('planned')} className="block w-full text-left px-4 py-2 hover:bg-gray-700">В планах</button>
-                  <button onClick={() => addToWatchlist('dropped')} className="block w-full text-left px-4 py-2 hover:bg-gray-700">Брошено</button>
+                  <button
+                    onClick={() => addToWatchlist("watching")}
+                    className="block w-full text-left px-4 py-2 hover:bg-gray-700"
+                  >
+                    Смотрю
+                  </button>
+                  <button
+                    onClick={() => addToWatchlist("completed")}
+                    className="block w-full text-left px-4 py-2 hover:bg-gray-700"
+                  >
+                    Просмотрено
+                  </button>
+                  <button
+                    onClick={() => addToWatchlist("planned")}
+                    className="block w-full text-left px-4 py-2 hover:bg-gray-700"
+                  >
+                    В планах
+                  </button>
+                  <button
+                    onClick={() => addToWatchlist("dropped")}
+                    className="block w-full text-left px-4 py-2 hover:bg-gray-700"
+                  >
+                    Брошено
+                  </button>
                 </div>
               </div>
             </div>
@@ -130,13 +173,7 @@ export default function AnimeDetail() {
             <AnimeInfo anime={anime} />
 
             <div className="bg-gray-800 p-4 rounded-lg shadow-lg">
-              <h2 className="text-xl font-bold mb-4">Смотреть онлайн</h2>
-              <AnimePlayer videoSource={anime.video_source} playerUrl={playerUrl} />
-              <EpisodeSelector
-                episodesData={anime.episodes_data}
-                currentEpisode={currentEpisode}
-                onSelect={setCurrentEpisode}
-              />
+              <StreamingSection animeId={id as string} />
             </div>
 
             <ReviewList reviews={anime.reviews} />

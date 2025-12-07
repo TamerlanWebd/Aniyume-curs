@@ -16,6 +16,18 @@ export const animeService = {
         return response.data;
     },
 
+    getAnimeStreams: async (id: string | number) => {
+        const response = await api.get(`/anime/${id}/streams`);
+        return response.data;
+    },
+
+    getAnimeEpisodeStream: async (id: string | number, episodeNum: string) => {
+        const response = await api.get(`/anime/${id}/stream/episode`, {
+            params: { episode_num: episodeNum }
+        });
+        return response.data;
+    },
+
     // Admin functions
     uploadAnimePoster: async (id: string | number, file: File) => {
         const formData = new FormData();

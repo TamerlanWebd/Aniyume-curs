@@ -26,12 +26,13 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: `
               default-src 'self';
-              connect-src 'self' http://127.0.0.1:8000 http://localhost:8000 ws://localhost:3000;
+              connect-src 'self' http://127.0.0.1:8000 http://localhost:8000 ws://localhost:3000 https:;
               script-src 'self' 'unsafe-eval' 'unsafe-inline';
               style-src 'self' 'unsafe-inline';
               img-src 'self' data: https:;
               font-src 'self' https://r2cdn.perplexity.ai;
               frame-src 'self' https://player.dreamerscast.com https://www.youtube.com https://kodik.info;
+              media-src 'self' https: data: blob:;
             `.replace(/\s{2,}/g, ' ').trim(),
           },
         ],

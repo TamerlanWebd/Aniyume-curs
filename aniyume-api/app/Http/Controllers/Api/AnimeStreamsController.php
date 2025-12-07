@@ -82,4 +82,37 @@ class AnimeStreamsController extends Controller
             'streaming_episodes' => $data['streaming_episodes'] ?? [],
         ]);
     }
+
+    public function episode(Request $request, $id)
+    {
+        $anime = Anime::findOrFail($id);
+        
+        $title = $anime->title_romaji
+            ?? $anime->title_english
+            ?? $anime->title
+            ?? $anime->title_native;
+
+        $episodeNum = $request->query('episode_num');
+
+        if (!$episodeNum) {
+            return response()->json(['message' => 'Episode number required'], 400);
+        }
+
+        $baseUri = config('services.streams_service.base_uri', 'http://127.0.0.1:9000');
+
+        try {
+            $response = Http::timeout(30)->get($baseUri . '/stream/episode', [
+                'title' => $title,
+                'episode_num' => $episodeNum
+            ]);
+
+            if ($response->failed()) {
+                return response()->json($response->json(), $response->status());
+            }
+
+            return response()->json($response->json());
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Service unavailable'], 503);
+        }
+    }
 }
