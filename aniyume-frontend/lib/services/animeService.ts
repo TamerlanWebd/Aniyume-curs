@@ -16,16 +16,31 @@ export const animeService = {
         return response.data;
     },
 
-    getAnimeStreams: async (id: string | number) => {
-        const response = await api.get(`/anime/${id}/streams`);
-        return response.data;
+    getAnimeStreams: async (title: string, preload: number = 1) => {
+        const response = await fetch(
+            `${process.env.NEXT_PUBLIC_STREAM_API_URL}/streams?title=${encodeURIComponent(title)}&preload=${preload}`
+        );
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            // Provide more detailed error message
+            throw new Error(errorData.detail || `Stream Service Error: ${response.status}`);
+        }
+
+        return response.json();
     },
 
-    getAnimeEpisodeStream: async (id: string | number, episodeNum: string) => {
-        const response = await api.get(`/anime/${id}/stream/episode`, {
-            params: { episode_num: episodeNum }
-        });
-        return response.data;
+    getAnimeEpisodeStream: async (title: string, episodeNum: string) => {
+        const response = await fetch(
+            `${process.env.NEXT_PUBLIC_STREAM_API_URL}/stream/episode?title=${encodeURIComponent(title)}&episode_num=${episodeNum}`
+        );
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.detail || `Episode Fetch Error: ${response.status}`);
+        }
+
+        return response.json();
     },
 
     // Admin functions

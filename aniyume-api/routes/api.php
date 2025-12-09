@@ -34,8 +34,8 @@ Route::prefix('v1')->group(function () {
     Route::prefix('anime')->group(function () {
         Route::get('/', [AnimeController::class, 'index']);
         Route::get('/{id}', [AnimeController::class, 'show']);
-        Route::get('/{id}/streams', [AnimeStreamsController::class, 'index']);
-        Route::get('/{id}/stream/episode', [AnimeStreamsController::class, 'episode']);
+        Route::get('/streams', [AnimeStreamsController::class, 'getStreams']);
+        Route::get('/stream/episode', [AnimeStreamsController::class, 'getEpisodeStream']);
         
         // Admin Routes (Protected)
         Route::middleware(['auth:api', 'role:admin'])->group(function () { // Assuming 'role' middleware exists or check in controller

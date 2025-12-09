@@ -110,11 +110,10 @@ export default function AnimeDetail() {
             <div className="flex flex-col gap-2">
               <button
                 onClick={toggleFavorite}
-                className={`w-full py-2 rounded font-bold flex items-center justify-center gap-2 transition-colors ${
-                  inFavorites
+                className={`w-full py-2 rounded font-bold flex items-center justify-center gap-2 transition-colors ${inFavorites
                     ? "bg-red-600 hover:bg-red-700"
                     : "bg-gray-700 hover:bg-gray-600"
-                }`}
+                  }`}
               >
                 <Heart
                   className={`w-5 h-5 ${inFavorites ? "fill-current" : ""}`}
@@ -173,7 +172,7 @@ export default function AnimeDetail() {
             <AnimeInfo anime={anime} />
 
             <div className="bg-gray-800 p-4 rounded-lg shadow-lg">
-              <StreamingSection animeId={id as string} />
+              <StreamingSection animeTitle={anime.title} />
             </div>
 
             <ReviewList reviews={anime.reviews} />

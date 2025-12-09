@@ -3,116 +3,138 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Anime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class AnimeStreamsController extends Controller
 {
-    /**
-     * Return anime data + streaming_episodes from Python service.
-     *
-     * @param int $id Anime ID
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function index($id)
-    {
-        // Увеличиваем лимит времени выполнения для парсинга (может занять до 2 минут)
-        set_time_limit(120);
-        
-        $anime = Anime::findOrFail($id);
+    private $streamServiceUrl;
 
-        // Get title for search (prefer romaji, fallback to english/native)
-        $title = $anime->title_romaji
-            ?? $anime->title_english
-            ?? $anime->title
-            ?? $anime->title_native;
+    public function __construct()
+    {
+        $this->streamServiceUrl = config('services.streams_service.base_uri', 'http://127.0.0.1:9000');
+    }
+
+    /**
+     * Получить список эпизодов для аниме
+     */
+    public function getStreams(Request $request)
+    {
+        set_time_limit(120); // Increase execution tme for slow scraping
+        $title = $request->query('title');
 
         if (!$title) {
-            return response()->json([
-                'message' => 'Anime title is missing',
-            ], 400);
+            return response()->json(['error' => 'Title parameter is required'], 400);
         }
 
-        // Get Python service URL from config (port 9000 to avoid conflict with Laravel)
-        $baseUri = config('services.streams_service.base_uri', 'http://127.0.0.1:9000');
+        // Bypass Cache for Debugging
+        // $cacheKey = 'streams_' . md5($title);
+        // $result = Cache::remember($cacheKey, 3600, function () use ($title) { ...
 
-        // Call Python streaming service (increased timeout for parsing)
+        // Manually build URL to avoid any Guzzle encoding issues
+        $streamUrl = "{$this->streamServiceUrl}/streams?title=" . urlencode($title);
+        Log::info("DEBUG: Entering getStreams for title: {$title}. Requesting: {$streamUrl}");
+
         try {
-            $response = Http::timeout(30)->get($baseUri . '/streams', [
-                'title' => $title,
-            ]);
+            // Increase timeout to 60s because scraping can be slow
+            $response = Http::timeout(60)->get($streamUrl);
+
+            Log::info("DEBUG: Response status: " . $response->status());
 
             if ($response->failed()) {
+                Log::error("Stream service error for title: {$title}", [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+                
                 return response()->json([
-                    'message' => 'Streams not available',
-                    'upstream_status' => $response->status(),
-                    'details' => $response->json(),
+                    'detail' => 'Stream service error: ' . $response->status(),
+                    'debug_url' => "{$this->streamServiceUrl}/streams",
+                    'status' => $response->status()
                 ], $response->status());
             }
 
-            $data = $response->json();
+            return response()->json($response->json());
+            
         } catch (\Exception $e) {
+            Log::error("DEBUG: Exception in getStreams: {$e->getMessage()}");
             return response()->json([
-                'message' => 'Stream service is unavailable',
-                'error' => $e->getMessage(),
+                'detail' => 'Service connection error: ' . $e->getMessage(),
+                'debug_url' => "{$this->streamServiceUrl}/streams",
+                'status' => 503
             ], 503);
         }
-
-        // Return combined response with new format
-        return response()->json([
-            'anime_id' => $anime->id,
-            'anilist_id' => $anime->anilist_id,
-            'title_romaji' => $anime->title_romaji,
-            'title_english' => $anime->title_english,
-            'title_native' => $anime->title_native,
-            'description' => $anime->description,
-            'poster_url' => $anime->poster_url,
-            'banner_url' => $anime->banner_url,
-            'average_rating' => $anime->average_rating,
-            'type' => $anime->type,
-            'status' => $anime->status,
-            'episodes' => $anime->episodes,
-            'season' => $anime->season,
-            'season_year' => $anime->season_year,
-            'aired_from' => $anime->aired_from,
-            'aired_to' => $anime->aired_to,
-            // New format from Python service
-            'anime_title' => $data['anime_title'] ?? null,
-            'streaming_episodes' => $data['streaming_episodes'] ?? [],
-        ]);
     }
 
-    public function episode(Request $request, $id)
+    /**
+     * Получить конкретный эпизод
+     */
+    public function getEpisodeStream(Request $request)
     {
-        $anime = Anime::findOrFail($id);
-        
-        $title = $anime->title_romaji
-            ?? $anime->title_english
-            ?? $anime->title
-            ?? $anime->title_native;
-
+        set_time_limit(120);
+        $title = $request->query('title');
         $episodeNum = $request->query('episode_num');
 
-        if (!$episodeNum) {
-            return response()->json(['message' => 'Episode number required'], 400);
+        if (!$title || !$episodeNum) {
+            return response()->json(['detail' => 'Title and episode_num are required'], 400);
         }
 
-        $baseUri = config('services.streams_service.base_uri', 'http://127.0.0.1:9000');
+        // Кэширование на 2 часа
+        $cacheKey = 'episode_' . md5($title . '_' . $episodeNum);
+        
+        $result = Cache::remember($cacheKey, 7200, function () use ($title, $episodeNum) {
+            try {
+                $url = "{$this->streamServiceUrl}/stream/episode?title=" . urlencode($title) . "&episode_num=" . urlencode($episodeNum);
+                
+                Log::info("DEBUG: Requesting episode: {$url}");
+                
+                $response = Http::timeout(30)->get($url);
 
-        try {
-            $response = Http::timeout(30)->get($baseUri . '/stream/episode', [
-                'title' => $title,
-                'episode_num' => $episodeNum
-            ]);
+                if ($response->failed()) {
+                    Log::error("Stream service error for episode", [
+                        'title' => $title,
+                        'episode' => $episodeNum,
+                        'status' => $response->status(),
+                    ]);
+                    
+                    return [
+                        'detail' => 'Stream service error: ' . $response->status(),
+                        'status' => $response->status()
+                    ];
+                }
 
-            if ($response->failed()) {
-                return response()->json($response->json(), $response->status());
+                return $response->json();
+                
+            } catch (\Exception $e) {
+                Log::error("Exception in getEpisodeStream: {$e->getMessage()}");
+                return [
+                    'detail' => 'Service connection error: ' . $e->getMessage(),
+                    'status' => 503
+                ];
             }
+        });
 
-            return response()->json($response->json());
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Service unavailable'], 503);
+        if (isset($result['detail'])) {
+            return response()->json($result, $result['status'] ?? 500);
         }
+
+        return response()->json($result);
+    }
+
+    /**
+     * Очистка кэша для конкретного аниме
+     */
+    public function clearCache(Request $request)
+    {
+        $title = $request->query('title');
+        
+        if ($title) {
+            Cache::forget('streams_' . md5($title));
+            return response()->json(['message' => 'Cache cleared for title']);
+        }
+
+        return response()->json(['error' => 'Title required'], 400);
     }
 }

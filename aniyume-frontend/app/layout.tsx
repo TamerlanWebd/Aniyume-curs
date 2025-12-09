@@ -11,11 +11,17 @@ export const metadata = {
   description: 'Смотрите аниме онлайн, ищите по жанрам и сохраняйте любимые'
 }
 
+import SWRegister from '@/components/SWRegister';
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ru" suppressHydrationWarning>
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#8b5cf6" />
+      </head>
       <body className={inter.className} suppressHydrationWarning>
-
+        <SWRegister />
         <LayoutClient>
           <AuthProvider>
             {children}

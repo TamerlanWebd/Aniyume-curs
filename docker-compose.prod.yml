@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl
+    depends_on:
+      - frontend
+      - api
+    networks:
+      - aniyume-network
+
+  # Frontend (Production Build)
+  frontend:
+    build:
+      context: ./aniyume-frontend
+      dockerfile: Dockerfile.prod
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=https://your-domain.com/api
+      - NEXT_PUBLIC_STREAM_API_URL=https://your-domain.com/streams
+    networks:
+      - aniyume-network
+
+  # Laravel API
+  api:
+    build:
+      context: ./aniyume-api
+      dockerfile: Dockerfile
+    environment:
+      - APP_ENV=production
+      - REDIS_HOST=redis
+      - CACHE_DRIVER=redis
+    depends_on:
+      - redis
+      - mysql
+    networks:
+      - aniyume-network
+
+  # Stream Service
+  stream-service:
+    build:
+      context: ./aniyume-stream-service
+      dockerfile: Dockerfile
+    environment:
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+    networks:
+      - aniyume-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - aniyume-network
+
+  # MySQL
+  mysql:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      - MYSQL_DATABASE=aniyume
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - aniyume-network
+
+volumes:
+  redis_data:
+  mysql_data:
+
+networks:
+  aniyume-network:
+    driver: bridge
